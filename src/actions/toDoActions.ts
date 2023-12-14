@@ -1,7 +1,9 @@
 'use server'
 
-import { db } from '@/lib/db'
+import { z } from 'zod'
 import { formSchema, formSchemaType } from '@/schemas/toDo'
+import { db } from '@/lib/db'
+import { revalidatePath } from 'next/cache'
 
 export async function CreateToDo(data: formSchemaType) {
   const validation = formSchema.safeParse(data)
@@ -20,4 +22,31 @@ export async function CreateToDo(data: formSchemaType) {
   }
 
   return form.id
+}
+
+// interface ExpenseParams {
+//     name: string
+//     amount: string
+
+//   }
+
+const AddExpense = z.object({
+  name: z.string(),
+  amount: z.string(),
+})
+
+export async function createExpense(formData: FormData) {
+  const { name, amount } = AddExpense.parse({
+    name: formData.get('name'),
+    amount: formData.get('amount'),
+  })
+
+  await db.expense.create({
+    data: {
+      name,
+      amount,
+    },
+  })
+
+  revalidatePath('/expense-tracker')
 }
